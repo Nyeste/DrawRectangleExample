@@ -10,21 +10,16 @@ namespace WindowsFormsApplication2
 {
     abstract class BuildingBlock
     {
-        private BuildingBlock nextBuildingBlock = null;
-        public WindowsFormsApplication2.BuildingBlock NextBuildingBlock
-        {
-            get { return nextBuildingBlock; }
-            set { nextBuildingBlock = value; }
-        }
-        public void Execute()
-        {
-
-        }
+        public enum NodeDirection { Top, Bottom, Left, Right}
 
         public abstract void Draw(PaintEventArgs e);
+
+        public abstract void DrawConnections(PaintEventArgs e);
+
         public abstract bool Contains(MouseEventArgs e);
 
-        public abstract Point GetInputNode();
-        public abstract Point GetOutputNode();
+        public abstract Point GetNode(NodeDirection dir);
+
+        public abstract void ConnectNodeToBlock(NodeDirection dir, BuildingBlock bb);
     }
 }

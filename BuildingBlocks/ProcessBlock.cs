@@ -10,10 +10,16 @@ namespace WindowsFormsApplication2.BuildingBlocks
 {
     class ProcessBlock : BuildingBlock
     {
+        private BuildingBlock nextBuildingBlock = null;
+        private static Size rectSize = new Size(100, 50);
         private Rectangle rec;
-        public ProcessBlock(Rectangle rec_)
+        public Size BlockSize
         {
-            this.rec = rec_;
+            get { return rectSize; }
+        }
+        public ProcessBlock(Point location)
+        {
+            this.rec = new Rectangle(new Point (location.X - rectSize.Width/2, location.Y - rectSize.Height/2), rectSize);
         }
 
         public override bool Contains(MouseEventArgs e)
@@ -29,20 +35,37 @@ namespace WindowsFormsApplication2.BuildingBlocks
             sf.LineAlignment = StringAlignment.Center;
             sf.Alignment = StringAlignment.Center;
             e.Graphics.DrawString("Process", SystemFonts.DefaultFont, Brushes.Black, this.rec, sf);
-            if (NextBuildingBlock != null)
+            DrawConnections(e);
+        }
+
+        public override Point GetNode(NodeDirection dir)
+        {
+            switch (dir)
             {
-                e.Graphics.DrawLine(Pens.Black, this.GetOutputNode(), NextBuildingBlock.GetInputNode());
+                case NodeDirection.Top:
+                    return new Point(this.rec.Location.X + this.rec.Width / 2, this.rec.Location.Y);
+                case NodeDirection.Bottom:
+                    return new Point(this.rec.Location.X + this.rec.Width / 2, this.rec.Location.Y + this.rec.Height);
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
-        public override Point GetInputNode()
+        public override void DrawConnections(PaintEventArgs e)
         {
-            return new Point(this.rec.Location.X + this.rec.Width / 2, this.rec.Location.Y);
+            if (nextBuildingBlock != null)
+            {
+                e.Graphics.DrawLine(Pens.Black, this.GetNode(NodeDirection.Bottom), nextBuildingBlock.GetNode(NodeDirection.Top));
+            }
         }
 
-        public override Point GetOutputNode()
+        public override void ConnectNodeToBlock(NodeDirection dir, BuildingBlock bb)
         {
-            return new Point(this.rec.Location.X + this.rec.Width / 2, this.rec.Location.Y + this.rec.Height);
+            if (dir == NodeDirection.Bottom) {
+                nextBuildingBlock = bb;
+            } else {
+                throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }

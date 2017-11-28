@@ -11,19 +11,21 @@ using WindowsFormsApplication2.BuildingBlocks;
 
 namespace WindowsFormsApplication2
 {
-    enum BlockBuildingPhase { Nothing, ProcessBlock, ConnectionStart, ConnectionEnd};
+    enum BlockBuildingPhase { Nothing, ProcessBlock, ConnectionStart, ConnectionEnd, DecisionBlock};
 
     public partial class Form1 : Form
     {
         int gridSize = 20;
         private BlockBuildingPhase phase = BlockBuildingPhase.Nothing;
-        List<DrawAction> actions = new List<DrawAction>();
         List<BuildingBlock> buildingBlocks = new List<BuildingBlock>();
         BuildingBlock targetBlock = null;
+        BuildingBlock.NodeDirection targetNode = BuildingBlock.NodeDirection.Bottom;
 
         public Form1()
         {
             InitializeComponent();
+            panel1.Paint += this.mainPanel_PaintGrid;
+            panel1.Paint += this.mainPanel_Paint;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -64,23 +66,37 @@ namespace WindowsFormsApplication2
             if (phase == BlockBuildingPhase.ProcessBlock)
             {
                 Point target = GetClosestGrid(e);
-                buildingBlocks.Add(new ProcessBlock(new Rectangle(target.X, target.Y, 100, 50)));
+                buildingBlocks.Add(new ProcessBlock(target));
                 phase = BlockBuildingPhase.Nothing;
                 this.Cursor = Cursors.Default;
                 panel1.Invalidate();
             } else if (phase == BlockBuildingPhase.ConnectionStart){
                 targetBlock = GetBuildingBlock(e);
                 if (targetBlock != null)
+                {
                     phase = BlockBuildingPhase.ConnectionEnd;
-            } else if (phase == BlockBuildingPhase.ConnectionEnd)
-            {
+                    if (targetBlock is ProcessBlock)
+                        targetNode = BuildingBlock.NodeDirection.Bottom;
+                    else if (targetBlock is DecisionBlock)
+                    {
+                        targetNode = ((DecisionBlock)targetBlock).GetNodeFromLocation(e.Location);
+                    }
+                }
+            } else if (phase == BlockBuildingPhase.ConnectionEnd) {
                 BuildingBlock nextTargetBlock = GetBuildingBlock(e);
                 if (nextTargetBlock != null)
                 {
-                    targetBlock.NextBuildingBlock = nextTargetBlock;
+                    targetBlock.ConnectNodeToBlock(targetNode, nextTargetBlock);
                     phase = BlockBuildingPhase.Nothing;
+                    this.Cursor = Cursors.Default;
                     panel1.Invalidate();
                 }
+            } else if (phase == BlockBuildingPhase.DecisionBlock) {
+                Point target = GetClosestGrid(e);
+                buildingBlocks.Add(new DecisionBlock(target));
+                phase = BlockBuildingPhase.Nothing;
+                this.Cursor = Cursors.Default;
+                panel1.Invalidate();
             }
         }
 
@@ -107,6 +123,12 @@ namespace WindowsFormsApplication2
         {
             phase = BlockBuildingPhase.ConnectionStart;
             this.Cursor = Cursors.VSplit;
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            phase = BlockBuildingPhase.DecisionBlock;
+            this.Cursor = Cursors.Cross;
         }
     }
 }
